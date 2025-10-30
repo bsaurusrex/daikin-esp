@@ -31,6 +31,18 @@ namespace esphome
          sensor::Sensor *thermistor_th5 = nullptr;
          sensor::Sensor *thermistor_th6 = nullptr;
 
+         // Room temperature sensors from packet 0x11
+         sensor::Sensor *room_temperature = nullptr;         // Indoor room temperature (main controller)
+         sensor::Sensor *intake_temperature = nullptr;       // Outdoor intake temperature (outdoor unit)
+
+         // Filter maintenance sensors from packet 0x39/0x3C
+         sensor::Sensor *filter_hours = nullptr;             // Filter usage counter (hours)
+         binary_sensor::BinarySensor *filter_alarm = nullptr; // Filter needs cleaning alarm
+
+         // Error code sensors from packet 0x38
+         text_sensor::TextSensor *error_code = nullptr;       // Formatted error code (e.g., "U4-01")
+         binary_sensor::BinarySensor *has_error = nullptr;    // Any error active
+
          // Sensor pointers for energy data
          sensor::Sensor *energy_produced = nullptr;           // kWh (x0.1)
          sensor::Sensor *electricity_consumed = nullptr;      // kWh (x0.1)
@@ -88,12 +100,21 @@ namespace esphome
             uint32_t runtime_hours = 0;
             uint32_t compressor_runtime = 0;
             float th1 = 0, th2 = 0, th3 = 0, th4 = 0, th5 = 0, th6 = 0;
+            float room_temperature = 0.0f;
+            float intake_temperature = 0.0f;
+            uint16_t filter_hours = 0;
+            bool filter_alarm = false;
+            char error_code[8] = {0};    // Formatted error string
+            bool has_error = false;
             bool compressor_state = false;
             char product_id[17] = {0};  // null-terminated
             char f_variant = 0;  // A, B, C, L, M, P, 0=unknown
             bool has_new_energy_data = false;
             bool has_new_thermistor_data = false;
             bool has_new_operating_status = false;
+            bool has_new_room_temp_data = false;
+            bool has_new_filter_data = false;
+            bool has_new_error_data = false;
          } cache_;
       };
 

@@ -16,6 +16,15 @@ CONF_THERMISTOR_TH4 = "thermistor_th4"
 CONF_THERMISTOR_TH5 = "thermistor_th5"
 CONF_THERMISTOR_TH6 = "thermistor_th6"
 
+CONF_ROOM_TEMPERATURE = "room_temperature"
+CONF_INTAKE_TEMPERATURE = "intake_temperature"
+
+CONF_FILTER_HOURS = "filter_hours"
+CONF_FILTER_ALARM = "filter_alarm"
+
+CONF_ERROR_CODE = "error_code"
+CONF_HAS_ERROR = "has_error"
+
 CONF_ENERGY_PRODUCED = "energy_produced"
 CONF_ELECTRICITY_CONSUMED = "electricity_consumed"
 CONF_RUNTIME_HOURS = "runtime_hours"
@@ -54,6 +63,21 @@ CONFIG_SCHEMA = climate.CLIMATE_SCHEMA.extend(
         cv.Optional(CONF_THERMISTOR_TH6): sensor.sensor_schema(
             unit_of_measurement="°C", accuracy_decimals=2
         ),
+        # Optional room temperature sensors
+        cv.Optional(CONF_ROOM_TEMPERATURE): sensor.sensor_schema(
+            unit_of_measurement="°C", accuracy_decimals=2
+        ),
+        cv.Optional(CONF_INTAKE_TEMPERATURE): sensor.sensor_schema(
+            unit_of_measurement="°C", accuracy_decimals=2
+        ),
+        # Optional filter maintenance sensors
+        cv.Optional(CONF_FILTER_HOURS): sensor.sensor_schema(
+            unit_of_measurement="h", accuracy_decimals=0
+        ),
+        cv.Optional(CONF_FILTER_ALARM): binary_sensor.binary_sensor_schema(),
+        # Optional error code sensors
+        cv.Optional(CONF_ERROR_CODE): text_sensor.text_sensor_schema(),
+        cv.Optional(CONF_HAS_ERROR): binary_sensor.binary_sensor_schema(),
         # Optional energy counters
         cv.Optional(CONF_ENERGY_PRODUCED): sensor.sensor_schema(
             unit_of_measurement="kWh", accuracy_decimals=1
@@ -112,6 +136,30 @@ async def to_code(config):
     if CONF_THERMISTOR_TH6 in config:
         sens = await sensor.new_sensor(config[CONF_THERMISTOR_TH6])
         cg.add(var.thermistor_th6 = sens)
+
+    # Register room temperature sensors
+    if CONF_ROOM_TEMPERATURE in config:
+        sens = await sensor.new_sensor(config[CONF_ROOM_TEMPERATURE])
+        cg.add(var.room_temperature = sens)
+    if CONF_INTAKE_TEMPERATURE in config:
+        sens = await sensor.new_sensor(config[CONF_INTAKE_TEMPERATURE])
+        cg.add(var.intake_temperature = sens)
+
+    # Register filter maintenance sensors
+    if CONF_FILTER_HOURS in config:
+        sens = await sensor.new_sensor(config[CONF_FILTER_HOURS])
+        cg.add(var.filter_hours = sens)
+    if CONF_FILTER_ALARM in config:
+        bin_sens = await binary_sensor.new_binary_sensor(config[CONF_FILTER_ALARM])
+        cg.add(var.filter_alarm = bin_sens)
+
+    # Register error code sensors
+    if CONF_ERROR_CODE in config:
+        text_sens = await text_sensor.new_text_sensor(config[CONF_ERROR_CODE])
+        cg.add(var.error_code = text_sens)
+    if CONF_HAS_ERROR in config:
+        bin_sens = await binary_sensor.new_binary_sensor(config[CONF_HAS_ERROR])
+        cg.add(var.has_error = bin_sens)
 
     # Register energy counter sensors
     if CONF_ENERGY_PRODUCED in config:

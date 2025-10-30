@@ -44,25 +44,102 @@ climate:
     name: "Ducted AC"
 
     # Thermistor diagnostics (6 internal temperature sensors)
-    # These sensors provide detailed heat pump circuit diagnostics
+    # These sensors provide detailed heat pump circuit diagnostics for monitoring efficiency and health
+    # Monitor Th1-Th2 delta for system performance: larger delta = better efficiency
+    # In heating mode: Th1 (indoor evaporator) should be warmer than Th5 (outdoor condenser)
+    # In cooling mode: Th1 should be cooler than outdoor ambient temperature
+    #
+    # WARNING: If Th5 suddenly jumps to extreme values (>95°C), this indicates potential compressor/system issues
     thermistor_th1:
-      name: "Evaporator Inlet (Th1)"  # Liquid entering evaporator
+      name: "Liquid Line Temperature (Th1)"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
       id: "th1_sensor"
+      # Liquid refrigerant entering the indoor/outdoor heat exchanger
+      # Normal range: 5-50°C depending on mode and season
     thermistor_th2:
-      name: "Evaporator Outlet (Th2)"  # Vapor exiting evaporator
+      name: "Gas Line Temperature (Th2)"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
       id: "th2_sensor"
+      # Vapor/gas refrigerant exiting the heat exchanger and returning to compressor
+      # Normal range: 5-45°C (cooling), heating mode varies widely
     thermistor_th3:
-      name: "Compressor Suction (Th3)"  # Vapor returning to compressor
+      name: "Compressor Suction Temperature (Th3)"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
       id: "th3_sensor"
+      # Low-pressure vapor entering compressor inlet
+      # Normal range: -5 to 25°C (should not be near freezing in cooling)
     thermistor_th4:
-      name: "Compressor Discharge (Th4)"  # Hot vapor from compressor
+      name: "Compressor Discharge Temperature (Th4)"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
       id: "th4_sensor"
+      # High-pressure hot vapor leaving compressor
+      # Normal range: 40-90°C (cooling), 70-100°C (heating)
+      # Excessive values (>100°C) = overheating, efficiency issue
     thermistor_th5:
-      name: "Condenser (Th5)"  # Rejection heat exchanger
+      name: "Outdoor Heat Exchanger (Th5)"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
       id: "th5_sensor"
+      # Condenser (cooling mode) or evaporator (heating mode) temperature
+      # Normal range: -10 to 60°C depending on mode
     thermistor_th6:
-      name: "Ambient/Outdoor (Th6)"  # Outdoor air temperature
+      name: "Outdoor Ambient Temperature (Th6)"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
       id: "th6_sensor"
+      # Outdoor air temperature sensor
+      # Normal range: -15 to 50°C (operational limits)
+
+    # Room temperature sensors (from packet 0x11)
+    room_temperature:
+      name: "Room Temperature"
+      unit_of_measurement: "°C"
+      icon: "mdi:home-thermometer"
+      id: "room_temp_sensor"
+      # Actual room temperature sensed by the main controller thermostat
+      # This is what the system uses for temperature feedback/control
+    intake_temperature:
+      name: "Outdoor Intake Temperature"
+      unit_of_measurement: "°C"
+      icon: "mdi:thermometer"
+      id: "intake_temp_sensor"
+      # Outdoor unit intake/ambient temperature measurement
+      # Used for system performance monitoring and diagnostics
+
+    # Filter maintenance sensors (from packet 0x39/0x3C)
+    filter_hours:
+      name: "Filter Usage Hours"
+      unit_of_measurement: "h"
+      icon: "mdi:air-filter"
+      id: "filter_hours_sensor"
+      # Filter counter - tracks hours of operation before cleaning needed
+      # Check filter when alarm is active
+    filter_alarm:
+      name: "Filter Needs Cleaning"
+      icon: "mdi:alert-circle"
+      id: "filter_alarm_binary"
+      # When TRUE: filter needs cleaning/replacement
+      # When FALSE: filter is clean and operational
+      # Optional: Create automation to send notifications when filter alarm activates
+
+    # Error code sensors (from packet 0x38)
+    error_code:
+      name: "System Error Code"
+      icon: "mdi:alert-circle-outline"
+      id: "error_code_text"
+      # Shows error code in format "EXX-YY" or "OK" if no error
+      # Example: E04-02 = communication error, U4-01 = temperature sensor error
+    has_error:
+      name: "System Error Active"
+      icon: "mdi:alert"
+      id: "has_error_binary"
+      # When TRUE: System has an error code
+      # When FALSE: System is operating normally
+      # Optional: Create automation to alert user when error becomes active
 
     # Energy counters and statistics
     energy_produced:

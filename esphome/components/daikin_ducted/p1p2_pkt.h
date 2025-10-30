@@ -167,6 +167,16 @@ typedef struct {
     uint8_t compressor_runtime_msb;   // Compressor runtime hours - byte 3 (u32 little-endian)
 } p1p2_EnergyCounters_t;
 
+/* Packet Type 0x39/0x3C (FILTER STATUS) */
+/* 0x39 used by FDY/L-series, 0x3C used by FDYQ/M-series - same layout */
+typedef struct {
+    uint8_t unknown0[8];       // Unknown data - bytes 0-7
+    uint8_t filter_hours_lsb;  // Filter counter/hours - byte 8 (LSB)
+    uint8_t filter_hours_msb;  // Filter counter/hours - byte 9 (MSB) - u16 little-endian
+    uint8_t alarm_flags;       // Alarm flags - byte 10 (bit 0: filter alarm)
+    // ... rest of packet unknown
+} p1p2_FilterStatus_t;
+
 /* Helper function declarations */
 static inline int16_t p1p2_f8_8_to_int16(uint8_t msb, uint8_t lsb) {
     return (int16_t)((int8_t)msb << 8) | lsb;

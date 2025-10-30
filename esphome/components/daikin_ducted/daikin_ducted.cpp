@@ -283,6 +283,15 @@ namespace esphome
 
         inst->current_temperature = (float)buffer[8] + ((float)buffer[9] / 256.f);
 
+        // Publish to room_temperature sensor if configured
+        float room_temp = (float)buffer[8] + ((float)buffer[9] / 256.f);
+        inst->cache_.room_temperature = room_temp;
+        inst->cache_.has_new_room_temp_data = true;
+
+        if (inst->room_temperature != nullptr) {
+          inst->room_temperature->publish_state(room_temp);
+        }
+
         if(fabs(inst->last_temp_state - inst->current_temperature) > 0.08f){
           inst->publish_state();
           inst->last_temp_state = inst->current_temperature;
@@ -295,6 +304,101 @@ namespace esphome
 
         ESP_LOGI(TAG, "intake: %i.%02iC",
                  temp / 256, ((temp & 0xFF) * 100) / 256);
+
+        // Publish to intake_temperature sensor if configured
+        float intake_temp = (float)buffer[8] + ((float)buffer[9] / 256.f);
+        inst->cache_.intake_temperature = intake_temp;
+
+        if (inst->intake_temperature != nullptr) {
+          inst->intake_temperature->publish_state(intake_temp);
+        }
+      }
+
+      // Packet Type 0x39 (FILTER STATUS) - FDY/L-series
+      if (buffer[0] == 0x40 && buffer[1] == 0x00 && buffer[2] == 0x39)
+      {
+        if (buffer_length >= 11) {
+          uint16_t filter_hours = (buffer[9] << 8) | buffer[8];  // Little-endian u16
+          bool filter_alarm = (buffer[10] & 0x01) != 0;          // Bit 0 = alarm flag
+
+          inst->cache_.filter_hours = filter_hours;
+          inst->cache_.filter_alarm = filter_alarm;
+          inst->cache_.has_new_filter_data = true;
+
+          if (inst->filter_hours != nullptr) {
+            inst->filter_hours->publish_state((float)filter_hours);
+          }
+          if (inst->filter_alarm != nullptr) {
+            inst->filter_alarm->publish_state(filter_alarm);
+          }
+
+          ESP_LOGD(TAG, "Filter Status (0x39): hours=%u, alarm=%d", filter_hours, filter_alarm);
+        }
+      }
+
+      // Packet Type 0x3C (FILTER STATUS) - FDYQ/M-series (same as 0x39)
+      if (buffer[0] == 0x40 && buffer[1] == 0x00 && buffer[2] == 0x3C)
+      {
+        if (buffer_length >= 11) {
+          uint16_t filter_hours = (buffer[9] << 8) | buffer[8];  // Little-endian u16
+          bool filter_alarm = (buffer[10] & 0x01) != 0;          // Bit 0 = alarm flag
+
+          inst->cache_.filter_hours = filter_hours;
+          inst->cache_.filter_alarm = filter_alarm;
+          inst->cache_.has_new_filter_data = true;
+
+          if (inst->filter_hours != nullptr) {
+            inst->filter_hours->publish_state((float)filter_hours);
+          }
+          if (inst->filter_alarm != nullptr) {
+            inst->filter_alarm->publish_state(filter_alarm);
+          }
+
+          ESP_LOGD(TAG, "Filter Status (0x3C): hours=%u, alarm=%d", filter_hours, filter_alarm);
+        }
+      }
+
+      // Packet Type 0x38 (OPERATION CONTROL) - Incoming from main controller
+      // Parse error codes and system status from main controller's 0x38 packet
+      if ((buffer[0] == 0x00 || buffer[0] == 0x40) && buffer[1] == 0x00 && buffer[2] == 0x38)
+      {
+        if (buffer_length >= 15) {
+          // Error codes are in bytes 5, 9, and 14
+          uint8_t error_byte1 = buffer[5];   // Primary error
+          uint8_t error_byte2 = buffer[9];   // Secondary error
+          uint8_t error_byte3 = buffer[14];  // Tertiary error
+
+          bool has_error = (error_byte1 != 0x00) || (error_byte2 != 0x00) || (error_byte3 != 0x00);
+
+          // Format error code as readable string
+          if (has_error) {
+            // Format as "E<byte1>-<byte2>" (common Daikin error format)
+            snprintf(inst->cache_.error_code, sizeof(inst->cache_.error_code),
+                     "E%02X-%02X", error_byte1, error_byte2);
+          } else {
+            strcpy(inst->cache_.error_code, "OK");
+          }
+
+          inst->cache_.has_error = has_error;
+          inst->cache_.has_new_error_data = true;
+
+          // Publish error code as text
+          if (inst->error_code != nullptr) {
+            inst->error_code->publish_state(std::string(inst->cache_.error_code));
+          }
+
+          // Publish error status as binary
+          if (inst->has_error != nullptr) {
+            inst->has_error->publish_state(has_error);
+          }
+
+          if (has_error) {
+            ESP_LOGW(TAG, "System Error Detected: %s (raw: %02X %02X %02X)",
+                     inst->cache_.error_code, error_byte1, error_byte2, error_byte3);
+          } else {
+            ESP_LOGV(TAG, "System Status: OK");
+          }
+        }
       }
 
       /* Targeting us */

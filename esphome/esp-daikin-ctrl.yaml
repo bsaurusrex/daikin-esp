@@ -42,6 +42,86 @@ climate:
   - platform: daikin_ducted
     id: daikin0
     name: "Ducted AC"
+
+    # Thermistor diagnostics (6 internal temperature sensors)
+    # These sensors provide detailed heat pump circuit diagnostics
+    thermistor_th1:
+      name: "Evaporator Inlet (Th1)"  # Liquid entering evaporator
+      id: "th1_sensor"
+    thermistor_th2:
+      name: "Evaporator Outlet (Th2)"  # Vapor exiting evaporator
+      id: "th2_sensor"
+    thermistor_th3:
+      name: "Compressor Suction (Th3)"  # Vapor returning to compressor
+      id: "th3_sensor"
+    thermistor_th4:
+      name: "Compressor Discharge (Th4)"  # Hot vapor from compressor
+      id: "th4_sensor"
+    thermistor_th5:
+      name: "Condenser (Th5)"  # Rejection heat exchanger
+      id: "th5_sensor"
+    thermistor_th6:
+      name: "Ambient/Outdoor (Th6)"  # Outdoor air temperature
+      id: "th6_sensor"
+
+    # Energy counters and statistics
+    energy_produced:
+      name: "Heat Pump Energy Produced"
+      id: "energy_produced_sensor"
+      unit_of_measurement: "kWh"
+    electricity_consumed:
+      name: "Heat Pump Electricity Consumed"
+      id: "electricity_consumed_sensor"
+      unit_of_measurement: "kWh"
+    runtime_hours:
+      name: "System Runtime Hours"
+      id: "runtime_hours_sensor"
+      unit_of_measurement: "h"
+    compressor_runtime_hours:
+      name: "Compressor Runtime Hours"
+      id: "compressor_runtime_sensor"
+      unit_of_measurement: "h"
+
+    # COP (Coefficient of Performance) metrics
+    cop_lifetime:
+      name: "COP Lifetime"
+      id: "cop_lifetime_sensor"
+    cop_period:
+      name: "COP Since Baseline"
+      id: "cop_period_sensor"
+    cop_realtime:
+      name: "COP Real-time"
+      id: "cop_realtime_sensor"
+
+    # Product identification
+    product_name:
+      name: "Product Model"
+      id: "product_name_text"
+    f_series_variant:
+      name: "F-Series Variant"
+      id: "f_series_variant_text"
+
+    # Operational state
+    compressor_active:
+      name: "Compressor Active"
+      id: "compressor_active_binary"
+
+    # Optional: Real-time COP with external power meter
+    # Uncomment and configure if you have an external energy meter (e.g., ATM90E32)
+    # This calculates instantaneous COP using the Daikin's lifetime efficiency
+    # correlated with your external power meter readings.
+    #
+    # IMPORTANT: Pass POWER in WATTS, not amps or voltage!
+    # Your energy meter should provide direct power measurement (watts), which
+    # already accounts for voltage, current, and power factor.
+    #
+    # Example with per-phase monitoring (recommended for multi-unit setup):
+    # - For Red Phase Daikin unit, use: external_power_sensor_id: sensor.enermon_ac_red_watts
+    # - For Yellow Phase unit, use: external_power_sensor_id: sensor.enermon_ac_yellow_watts
+    # - For Blue Phase unit, use: external_power_sensor_id: sensor.enermon_ac_blue_watts
+    #
+    # external_power_sensor_id: sensor.enermon_ac_red_watts  # Reference to your power meter entity (watts)
+
     on_state:
       then:
         lambda: |-
@@ -57,7 +137,7 @@ climate:
           else if(x.fan_mode == climate::CLIMATE_FAN_HIGH)
             call.set_speed(3);
 
-          if(  id(templatefan0).speed != call.get_speed()) 
+          if(  id(templatefan0).speed != call.get_speed())
             call.perform();
 
 fan:

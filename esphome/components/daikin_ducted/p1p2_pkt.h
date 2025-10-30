@@ -119,5 +119,66 @@ typedef struct {
     uint8_t unknown15; //15
 } p1p2_OperatingControl_t;
 
+/* Packet Type 0xA1 (PRODUCT IDENTIFIER) */
+typedef struct {
+    uint8_t product_id[16];  // ASCII product identifier string
+} p1p2_ProductIdentifier_t;
+
+/* Packet Type 0xA3 (THERMISTOR DIAGNOSTICS) - 6 temperature sensors */
+typedef struct {
+    uint8_t th1_msb;      // Th1 high byte (signed)
+    uint8_t th1_lsb;      // Th1 low byte (1/256°C resolution)
+    uint8_t th2_msb;      // Th2 high byte
+    uint8_t th2_lsb;      // Th2 low byte
+    uint8_t th3_msb;      // Th3 high byte
+    uint8_t th3_lsb;      // Th3 low byte
+    uint8_t th4_msb;      // Th4 high byte
+    uint8_t th4_lsb;      // Th4 low byte
+    uint8_t th5_msb;      // Th5 high byte
+    uint8_t th5_lsb;      // Th5 low byte
+    uint8_t th6_msb;      // Th6 high byte
+    uint8_t th6_lsb;      // Th6 low byte
+} p1p2_Thermistors_t;
+
+/* Packet Type 0xB1 (PRODUCT INFO / MAJOR VERSION) */
+typedef struct {
+    uint8_t major_version;  // F-series major version (A, B, C, L, LA, M, P, PA)
+    uint8_t minor_version;
+    uint8_t reserved[18];
+} p1p2_ProductInfo_t;
+
+/* Packet Type 0xB8 (ENERGY COUNTERS) */
+typedef struct {
+    uint8_t energy_produced_lsb;      // Energy produced (heating) - byte 0
+    uint8_t energy_produced_byte1;    // byte 1
+    uint8_t energy_produced_byte2;    // byte 2
+    uint8_t energy_produced_msb;      // Energy produced (heating) - byte 3 (u32 little-endian, in 0.1 kWh units)
+    uint8_t electricity_consumed_lsb; // Electricity consumed - byte 0
+    uint8_t electricity_consumed_byte1; // byte 1
+    uint8_t electricity_consumed_byte2; // byte 2
+    uint8_t electricity_consumed_msb; // Electricity consumed - byte 3 (u32 little-endian, in 0.1 kWh units)
+    uint8_t runtime_hours_lsb;        // System runtime hours - byte 0
+    uint8_t runtime_hours_byte1;      // byte 1
+    uint8_t runtime_hours_byte2;      // byte 2
+    uint8_t runtime_hours_msb;        // System runtime hours - byte 3 (u32 little-endian)
+    uint8_t compressor_runtime_lsb;   // Compressor runtime hours - byte 0
+    uint8_t compressor_runtime_byte1; // byte 1
+    uint8_t compressor_runtime_byte2; // byte 2
+    uint8_t compressor_runtime_msb;   // Compressor runtime hours - byte 3 (u32 little-endian)
+} p1p2_EnergyCounters_t;
+
+/* Helper function declarations */
+static inline int16_t p1p2_f8_8_to_int16(uint8_t msb, uint8_t lsb) {
+    return (int16_t)((int8_t)msb << 8) | lsb;
+}
+
+static inline float p1p2_f8_8_to_float(uint8_t msb, uint8_t lsb) {
+    int16_t raw = p1p2_f8_8_to_int16(msb, lsb);
+    return (float)raw / 256.0f;
+}
+
+static inline uint32_t p1p2_u32_le(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
+    return (uint32_t)b0 | ((uint32_t)b1 << 8) | ((uint32_t)b2 << 16) | ((uint32_t)b3 << 24);
+}
 
 void p1p2_parse_packet(const unsigned int *buffer, unsigned int buffer_length);
